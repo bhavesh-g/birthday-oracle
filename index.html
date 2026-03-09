@@ -3,132 +3,166 @@
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>Birthday Oracle</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
 
 body{
-background:#0c0f14;
-font-family:Inter, Roboto, system-ui;
+background:#0b0f14;
 color:#e6edf3;
-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
+font-family:Inter,system-ui;
+margin:0;
+padding:14px;
 }
 
-.container-box{
-max-width:520px;
+/* APP LAYOUT */
+
+.app{
+max-width:950px;
+margin:auto;
 }
 
-.game-card{
+/* HEADER */
 
+.header{
 background:#11161d;
-
-border-radius:20px;
-
-padding:48px;
-
-box-shadow:0 40px 80px rgba(0,0,0,.55);
-
-border:1px solid rgba(255,255,255,.04);
-
-transition:.3s ease;
-
-}
-
-.title{
-font-size:28px;
-font-weight:600;
-letter-spacing:.3px;
-}
-
-.subtitle{
-color:#9aa4af;
-margin-top:8px;
-margin-bottom:35px;
+border-radius:14px;
+padding:18px;
+margin-bottom:12px;
+border:1px solid rgba(255,255,255,.05);
+position:sticky;
+top:10px;
+z-index:10;
 }
 
 .question{
-font-size:22px;
+font-size:18px;
 font-weight:500;
-min-height:70px;
+}
+
+.controls{
+margin-top:12px;
+display:flex;
+gap:10px;
 }
 
 .btn-yes{
 background:#7aa2f7;
 border:none;
-padding:12px 26px;
+flex:1;
 font-weight:500;
-}
-
-.btn-yes:hover{
-background:#6d92df;
 }
 
 .btn-no{
-background:#1e2630;
+background:#1f2732;
 border:none;
-color:#d4dce5;
-padding:12px 26px;
-font-weight:500;
+color:#e6edf3;
+flex:1;
+}
+
+.btn-yes:hover{
+background:#6b92e2;
 }
 
 .btn-no:hover{
-background:#283140;
-}
-
-.buttons{
-margin-top:25px;
-display:flex;
-gap:16px;
+background:#273243;
 }
 
 .result{
-font-size:26px;
-margin-top:30px;
+margin-top:8px;
 font-weight:500;
 }
 
-.progress{
-height:6px;
-background:#1c222b;
-margin-top:30px;
+.step{
+font-size:12px;
+color:#8b949e;
+margin-top:4px;
 }
 
-.progress-bar{
+/* CALENDAR */
+
+.calendar{
+
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+gap:10px;
+
+isolation:isolate;
+
+}
+
+.month{
+
+background:#11161d;
+border-radius:10px;
+padding:8px;
+border:1px solid rgba(255,255,255,.04);
+
+}
+
+.month-name{
+font-size:12px;
+text-align:center;
+margin-bottom:6px;
+color:#9aa4af;
+}
+
+.days{
+
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:2px;
+
+}
+
+.day{
+
+font-size:10px;
+text-align:center;
+padding:3px 0;
+border-radius:3px;
+background:#1f2732;
+transition:.25s ease;
+
+}
+
+/* STATES */
+
+.active{
+background:#2c3746;
+}
+
+.mid{
 background:#7aa2f7;
-transition:width .4s ease;
+color:#000;
+font-weight:600;
+transform:scale(1.15);
 }
 
-.fade{
-opacity:.6;
-transform:scale(.98);
+.rejected{
+background:#0f1318;
+color:#37414d;
 }
 
 </style>
 </head>
 
+
 <body>
 
-<div class="container container-box">
+<div class="app">
 
-<div id="card" class="game-card">
-
-<div class="title">Birthday Oracle</div>
-
-<div class="subtitle">
-Answer a few simple yes or no questions.
-</div>
+<div class="header">
 
 <div id="question" class="question"></div>
 
-<div id="buttons" class="buttons">
+<div class="controls">
 
 <button class="btn btn-yes" onclick="answer(true)">Yes</button>
 
@@ -136,189 +170,157 @@ Answer a few simple yes or no questions.
 
 </div>
 
+<div id="step" class="step"></div>
+
 <div id="result" class="result"></div>
 
-<div class="progress">
+</div>
 
-<div id="bar" class="progress-bar"></div>
+<div id="calendar" class="calendar"></div>
 
 </div>
 
-</div>
-
-</div>
 
 <script>
 
-const daysInMonth=[31,28,31,30,31,30,31,31,30,31,30,31]
+/* MONTH DATA */
 
 const months=[
-"January","February","March","April","May","June",
-"July","August","September","October","November","December"
+"Jan","Feb","Mar","Apr","May","Jun",
+"Jul","Aug","Sep","Oct","Nov","Dec"
 ]
+
+const daysInMonth=[31,28,31,30,31,30,31,31,30,31,30,31]
+
+/* BUILD CALENDAR */
+
+let dayCounter=1
+
+const calendar=document.getElementById("calendar")
+
+for(let m=0;m<12;m++){
+
+let monthDiv=document.createElement("div")
+monthDiv.className="month"
+
+let title=document.createElement("div")
+title.className="month-name"
+title.innerText=months[m]
+
+let days=document.createElement("div")
+days.className="days"
+
+for(let d=1;d<=daysInMonth[m];d++){
+
+let cell=document.createElement("div")
+cell.className="day"
+cell.id="d"+dayCounter
+cell.innerText=d
+
+days.appendChild(cell)
+
+dayCounter++
+
+}
+
+monthDiv.appendChild(title)
+monthDiv.appendChild(days)
+
+calendar.appendChild(monthDiv)
+
+}
+
+/* DATE CONVERSION */
 
 function dayToDate(day){
 
 let m=0
 
 while(day>daysInMonth[m]){
+
 day-=daysInMonth[m]
 m++
+
 }
 
 return months[m]+" "+day
 
 }
 
-
-/* Binary search state */
+/* BINARY SEARCH */
 
 let low=1
 let high=365
 let mid
-let steps=0
+let step=1
 const maxSteps=Math.ceil(Math.log2(365))
 
-
-function animate(){
-
-const card=document.getElementById("card")
-
-card.classList.add("fade")
-
-setTimeout(()=>card.classList.remove("fade"),120)
-
-}
-
-
-function ask(){
-
-if(low===high){
-
-showResult()
-
-return
-
-}
+function render(){
 
 mid=Math.floor((low+high)/2)
 
-document.getElementById("question").innerText=
+for(let i=1;i<=365;i++){
 
-"Is your birthday after "+dayToDate(mid)+"?"
+let cell=document.getElementById("d"+i)
+
+cell.classList.remove("active","mid","rejected")
+
+if(i<low || i>high){
+
+cell.classList.add("rejected")
+
+}else{
+
+cell.classList.add("active")
 
 }
 
+if(i===mid){
+
+cell.classList.add("mid")
+
+}
+
+}
+
+document.getElementById("question").innerText=
+"Is your birthday after "+dayToDate(mid)+"?"
+
+document.getElementById("step").innerText=
+"Step "+step+" of "+maxSteps
+
+}
 
 function answer(yes){
 
-animate()
-
-steps++
+if(low===high)return
 
 if(yes){
+
 low=mid+1
+
 }else{
+
 high=mid
-}
-
-updateProgress()
-
-ask()
 
 }
 
+step++
 
-function updateProgress(){
+render()
 
-let pct=(steps/maxSteps)*100
+if(low===high){
 
-document.getElementById("bar").style.width=pct+"%"
-
-}
-
-
-function showResult(){
-
-document.getElementById("question").innerText="Your birthday is"
-
-document.getElementById("buttons").innerHTML=""
-
-document.getElementById("result").innerText=dayToDate(low)
-
-let btn=document.createElement("button")
-
-btn.className="btn btn-yes mt-3"
-
-btn.innerText="Play Again"
-
-btn.onclick=restart
-
-document.getElementById("buttons").appendChild(btn)
-
-}
-
-
-/* restart */
-
-function restart(){
-
-low=1
-high=365
-steps=0
-
-document.getElementById("result").innerText=""
-
-document.getElementById("buttons").innerHTML=
-
-`<button class="btn btn-yes" onclick="answer(true)">Yes</button>
-<button class="btn btn-no" onclick="answer(false)">No</button>`
-
-updateProgress()
-
-ask()
-
-}
-
-
-/* binary search correctness test */
-
-function test(){
-
-for(let day=1;day<=365;day++){
-
-let l=1
-let h=365
-
-while(l<h){
-
-let m=Math.floor((l+h)/2)
-
-if(day>m){
-l=m+1
-}else{
-h=m
-}
-
-}
-
-if(l!==day){
-
-console.error("logic failure",day)
-
-return
+document.getElementById("result").innerText=
+"Birthday found: "+dayToDate(low)
 
 }
 
 }
 
-console.log("Binary search validated for all 365 days")
+/* INITIAL RENDER */
 
-}
-
-test()
-
-ask()
+render()
 
 </script>
 
